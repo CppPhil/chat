@@ -12,6 +12,8 @@ public:
   MainWindow(QWidget* parent = nullptr);
 
 private:
+  void setTitle();
+
   Ui::MainWindow ui;
 };
 #endif // MAINWINDOW_HPP
