@@ -1,11 +1,14 @@
 #include <cctype>
 
+#include <iterator>
 #include <optional>
 #include <stdexcept>
 #include <string>
 
 #include <QIODeviceBase>
-#include <QMessageBox>
+#include <QNetworkInterface>
+
+#include <pl/algo/ranged_algorithms.hpp>
 
 #include "lib/client_list_message.hpp"
 #include "lib/net_string.hpp"
@@ -39,10 +42,27 @@ std::optional<long long> parseNumber(const std::string& string)
     return std::nullopt;
   }
 }
+
+std::vector<std::string> collectHostMachineAddresses()
+{
+  const QList<QHostAddress> list{QNetworkInterface::allAddresses()};
+  std::vector<std::string>  result(static_cast<std::size_t>(list.size()));
+
+  for (qsizetype i{0}; i < list.size(); ++i) {
+    const QString     qString{list[i].toString()};
+    const std::string stdString{qString.toStdString()};
+    result[i] = stdString;
+  }
+
+  return result;
+}
 } // anonymous namespace
 
 MainWindow::MainWindow(const QHostAddress& serverAddress, QWidget* parent)
-  : QMainWindow{parent}, m_serverAddress{serverAddress}, m_tcpSocket{}
+  : QMainWindow{parent}
+  , m_serverAddress{serverAddress}
+  , m_tcpSocket{}
+  , m_peerAddresses{}
 {
   ui.setupUi(this);
   setTitle();
@@ -56,7 +76,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::onServerConnectionLost()
 {
-  QMessageBox::critical(this, "Connection lost", "Lost connection to server");
   close();
 }
 
@@ -103,8 +122,23 @@ void MainWindow::onServerReadyRead()
   try {
     const lib::NetString netString{
       lib::FromNetStringData{}, buffer.data(), buffer.size()};
-    const std::string            json{netString.asPlainString()};
-    const lib::ClientListMessage clientListMessage{json};
+    const std::string              json{netString.asPlainString()};
+    const lib::ClientListMessage   clientListMessage{json};
+    const std::vector<std::string> ipAddresses{clientListMessage.ipAddresses()};
+    const std::vector<std::string> hostMachineAddresses{
+      collectHostMachineAddresses()};
+    std::vector<std::string> peerAddresses{};
+    pl::algo::copy_if(
+      ipAddresses,
+      std::back_inserter(peerAddresses),
+      [&hostMachineAddresses](const std::string& ipAddress) {
+        return pl::algo::none_of(
+          hostMachineAddresses, [&ipAddress](const std::string& hostAddress) {
+            return hostAddress == ipAddress;
+          });
+      });
+    m_peerAddresses = std::move(peerAddresses);
+    showPeerAddressesInGui();
   }
   catch (const std::runtime_error&) {
     close();
@@ -135,4 +169,20 @@ void MainWindow::setupTcpSocket()
 void MainWindow::setTitle()
 {
   setWindowTitle("Chat application");
+}
+
+void MainWindow::showPeerAddressesInGui()
+{
+  const QString previousSelection{ui.chatPeersComboBox->currentText()};
+  ui.chatPeersComboBox->clear();
+
+  for (const std::string& address : m_peerAddresses) {
+    ui.chatPeersComboBox->addItem(QString::fromStdString(address));
+  }
+
+  const int index{ui.chatPeersComboBox->findText(previousSelection)};
+
+  if (index != -1) {
+    ui.chatPeersComboBox->setCurrentIndex(index);
+  }
 }

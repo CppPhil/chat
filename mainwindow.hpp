@@ -1,5 +1,8 @@
 #ifndef MAINWINDOW_HPP
 #define MAINWINDOW_HPP
+#include <string>
+#include <vector>
+
 #include <QHostAddress>
 #include <QMainWindow>
 #include <QTcpSocket>
@@ -28,8 +31,11 @@ private:
 
   void setTitle();
 
-  Ui::MainWindow     ui;
-  const QHostAddress m_serverAddress;
-  QTcpSocket         m_tcpSocket;
+  void showPeerAddressesInGui();
+
+  Ui::MainWindow           ui;
+  const QHostAddress       m_serverAddress;
+  QTcpSocket               m_tcpSocket;
+  std::vector<std::string> m_peerAddresses;
 };
 #endif // MAINWINDOW_HPP
