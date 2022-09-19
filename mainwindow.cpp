@@ -62,8 +62,6 @@ void MainWindow::onServerConnectionLost()
 
 void MainWindow::onServerReadyRead()
 {
-  // TODO: Handle errors
-
   const char firstByte{peek(m_tcpSocket)};
 
   if (firstByte == '\0') {
