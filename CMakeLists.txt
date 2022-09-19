@@ -21,6 +21,8 @@ set(PROJECT_SOURCES
         mainwindow.ui
 )
 
+add_subdirectory(external/chat_backend)
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(chat
         MANUAL_FINALIZATION
@@ -44,7 +46,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(chat PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
+target_link_libraries(chat PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network library)
 
 set_target_properties(chat PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
