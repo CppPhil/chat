@@ -1,4 +1,5 @@
-Command line arguments
+Install MSVC19
+Install MSVC19 Qt Build with Qt Maintenance Tool
 
 server connection
 
