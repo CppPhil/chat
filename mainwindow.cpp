@@ -8,6 +8,7 @@
 #include <QMessageBox>
 
 #include "lib/client_list_message.hpp"
+#include "lib/net_string.hpp"
 #include "lib/ports.hpp"
 
 #include "mainwindow.hpp"
@@ -70,6 +71,7 @@ void MainWindow::onServerReadyRead()
   }
 
   if (!std::isdigit(firstByte)) {
+    close();
     return;
   }
 
@@ -84,20 +86,32 @@ void MainWindow::onServerReadyRead()
   const std::optional<long long> optionalStringLength{parseNumber(buffer)};
 
   if (!optionalStringLength.has_value()) {
-    // TODO: Handle error
+    close();
+    return;
   }
 
   const long long stringLength{*optionalStringLength};
 
   if (stringLength <= 0) {
-    // TODO: Handle error
+    close();
+    return;
   }
 
   const std::string::size_type oldStringLength{buffer.size()};
   buffer.resize(
     oldStringLength + stringLength + 1 + 1); // + 1 for the : and + 1 for the ,
   m_tcpSocket.read(buffer.data() + oldStringLength, stringLength + 1 + 1);
-  // TODO: HERE parse number
+
+  try {
+    const lib::NetString netString{
+      lib::FromNetStringData{}, buffer.data(), buffer.size()};
+    const std::string            json{netString.asPlainString()};
+    const lib::ClientListMessage clientListMessage{json};
+  }
+  catch (const std::runtime_error&) {
+    close();
+    return;
+  }
 }
 
 void MainWindow::setupTcpSocket()
