@@ -1,7 +1,7 @@
 Install MSVC19
 Install MSVC19 Qt Build with Qt Maintenance Tool
 
-server connection
+clean up
 
-UDP
+handle errors
 

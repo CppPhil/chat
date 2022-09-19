@@ -6,6 +6,7 @@
 #include <QHostAddress>
 #include <QMainWindow>
 #include <QTcpSocket>
+#include <QUdpSocket>
 
 #include "./ui_mainwindow.h"
 
@@ -26,8 +27,14 @@ private slots:
 
   void onServerReadyRead();
 
+  void onUdpSocketReadyRead();
+
+  void onSendMessageButtonClicked();
+
 private:
   void setupTcpSocket();
+
+  void setupUdpSocket();
 
   void setTitle();
 
@@ -37,5 +44,6 @@ private:
   const QHostAddress       m_serverAddress;
   QTcpSocket               m_tcpSocket;
   std::vector<std::string> m_peerAddresses;
+  QUdpSocket               m_udpSocket;
 };
 #endif // MAINWINDOW_HPP

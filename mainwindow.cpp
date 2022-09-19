@@ -6,6 +6,7 @@
 #include <string>
 
 #include <QIODeviceBase>
+#include <QNetworkDatagram>
 #include <QNetworkInterface>
 
 #include <pl/algo/ranged_algorithms.hpp>
@@ -63,10 +64,18 @@ MainWindow::MainWindow(const QHostAddress& serverAddress, QWidget* parent)
   , m_serverAddress{serverAddress}
   , m_tcpSocket{}
   , m_peerAddresses{}
+  , m_udpSocket{}
 {
   ui.setupUi(this);
   setTitle();
   setupTcpSocket();
+  setupUdpSocket();
+
+  connect(
+    ui.sendChatMessagePushButton,
+    &QAbstractButton::clicked,
+    this,
+    &MainWindow::onSendMessageButtonClicked);
 }
 
 MainWindow::~MainWindow()
@@ -146,6 +155,36 @@ void MainWindow::onServerReadyRead()
   }
 }
 
+void MainWindow::onUdpSocketReadyRead()
+{
+  while (m_udpSocket.hasPendingDatagrams()) {
+    const QNetworkDatagram datagram{m_udpSocket.receiveDatagram()};
+    const QString          message{QString{"%1: %2"}.arg(
+      datagram.senderAddress().toString(), QString{datagram.data()})};
+    ui.chatMessagesTextEdit->append(message);
+  }
+}
+
+void MainWindow::onSendMessageButtonClicked()
+{
+  const QString message{ui.chatMessageToSendLineEdit->text()};
+
+  if (message.isEmpty()) {
+    return;
+  }
+
+  const QHostAddress hostAddress{ui.chatPeersComboBox->currentText()};
+
+  if (hostAddress.isNull()) {
+    return;
+  }
+
+  ui.chatMessageToSendLineEdit->clear();
+  const QByteArray utf8{message.toUtf8()};
+  m_udpSocket.writeDatagram(utf8, hostAddress, lib::udpPort);
+  ui.chatMessagesTextEdit->append(QString{"You: %1"}.arg(QString{utf8}));
+}
+
 void MainWindow::setupTcpSocket()
 {
   connect(
@@ -164,6 +203,20 @@ void MainWindow::setupTcpSocket()
     /* address */ m_serverAddress,
     /* port */ lib::tcpPort,
     /* openMode */ QIODeviceBase::ReadOnly);
+}
+
+void MainWindow::setupUdpSocket()
+{
+  if (!m_udpSocket.bind(QHostAddress::Any, lib::udpPort)) {
+    close();
+    return;
+  }
+
+  connect(
+    &m_udpSocket,
+    &QIODevice::readyRead,
+    this,
+    &MainWindow::onUdpSocketReadyRead);
 }
 
 void MainWindow::setTitle()
