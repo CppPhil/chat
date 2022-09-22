@@ -1,7 +1,2 @@
 Install MSVC19
 Install MSVC19 Qt Build with Qt Maintenance Tool
-
-clean up
-
-handle errors
-

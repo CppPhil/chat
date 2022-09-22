@@ -90,17 +90,6 @@ void MainWindow::onServerConnectionLost()
 
 void MainWindow::onServerReadyRead()
 {
-  const char firstByte{peek(m_tcpSocket)};
-
-  if (firstByte == '\0') {
-    return;
-  }
-
-  if (!std::isdigit(firstByte)) {
-    close();
-    return;
-  }
-
   std::string buffer{};
   char        character{};
 
