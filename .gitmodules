@@ -1,0 +1,3 @@
+[submodule "external/chat_backend"]
+	path = external/chat_backend
+	url = git@github.com:CppPhil/chat_backend.git
